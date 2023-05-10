@@ -9,6 +9,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SearchView;
@@ -30,10 +33,12 @@ import java.util.logging.Logger;
 
 public class MapsFragment extends Fragment implements SelectListener{
     JSONArray buildings = new JSONArray();
+    JSONArray canteens = new JSONArray();
     double minLat = 0;
     double minLng = 0;
     double maxLat = 0;
     double maxLng = 0;
+    int selectedMode = 0; // 0 is building, 1 is canteen
     GoogleMap mMap;
     SearchView mSearchView;
     RecyclerView mRecyclerView;
@@ -53,7 +58,9 @@ public class MapsFragment extends Fragment implements SelectListener{
         @Override
         public void onMapReady(GoogleMap googleMap) {
             mMap = googleMap;
+            // Construct Dataset
             try{
+                // Buildings
                 JSONObject building1 = new JSONObject();
                 building1.put("abbrev", "AB1");
                 building1.put("fullname", "Academic Building No.1");
@@ -68,39 +75,28 @@ public class MapsFragment extends Fragment implements SelectListener{
 
                 buildings.put(building1);
                 buildings.put(building2);
+
+                // Canteens
+                JSONObject canteen1 = new JSONObject();
+                canteen1.put("abbrev", "CC-Can");
+                canteen1.put("fullname", "Chung Chi College Student Canteen");
+                canteen1.put("Lat", 22.41666667);
+                canteen1.put("Lng", 114.20977778);
+
+                JSONObject canteen2 = new JSONObject();
+                canteen2.put("abbrev", "NA-Can");
+                canteen2.put("fullname", "New Asia College Student Canteen");
+                canteen2.put("Lat", 22.4210186);
+                canteen2.put("Lng", 114.2092077);
+
+                canteens.put(canteen1);
+                canteens.put(canteen2);
             }catch (JSONException e){
                 e.printStackTrace();
             }
 
+            pinArray(buildings);
 
-            for (int i = 0; i < buildings.length(); i++){
-                try{
-                    JSONObject curr = buildings.getJSONObject(i);
-                    double lat = curr.getDouble("Lat");
-                    double lng = curr.getDouble("Lng");
-                    if (i == 0){
-                        minLat = lat;
-                        maxLat = lat;
-                        minLng = lng;
-                        maxLng = lng;
-                    }else{
-                        if (lat > maxLat){
-                            maxLat = lat;
-                        }else if (lat < minLat){
-                            minLat = lat;
-                        }
-                        if (lng > maxLng){
-                            maxLng = lng;
-                        }else if (lng < minLng){
-                            minLng = lng;
-                        }
-                    }
-                    LatLng loc = new LatLng(lat, lng);
-                    googleMap.addMarker(new MarkerOptions().position(loc).title(curr.getString("fullname")).snippet(curr.getString("abbrev")));
-                }catch (JSONException e){
-                    e.printStackTrace();
-                }
-            }
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(22.419625, 114.2045719), 15));
 
             // Search View
@@ -131,14 +127,78 @@ public class MapsFragment extends Fragment implements SelectListener{
                     return false;
                 }
             });
+            initRecyclerView();
         }
     };
+
+    public void initRecyclerView(){
+        adaptor = new MapSearchAdaptor(new JSONArray(), this);
+        mRecyclerView.setAdapter(adaptor);
+    }
+
+    public void pinArray(JSONArray array){
+        for (int i = 0; i < array.length(); i++){
+            try{
+                JSONObject curr = array.getJSONObject(i);
+                double lat = curr.getDouble("Lat");
+                double lng = curr.getDouble("Lng");
+                if (i == 0){
+                    minLat = lat;
+                    maxLat = lat;
+                    minLng = lng;
+                    maxLng = lng;
+                }else{
+                    if (lat > maxLat){
+                        maxLat = lat;
+                    }else if (lat < minLat){
+                        minLat = lat;
+                    }
+                    if (lng > maxLng){
+                        maxLng = lng;
+                    }else if (lng < minLng){
+                        minLng = lng;
+                    }
+                }
+                LatLng loc = new LatLng(lat, lng);
+                mMap.addMarker(new MarkerOptions().position(loc).title(curr.getString("fullname")).snippet(curr.getString("abbrev")));
+            }catch (JSONException e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.map_pin_menu, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        // Return to full map view
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(22.419625, 114.2045719), 15));
+        switch (item.getItemId()){
+            case R.id.buildings:
+                selectedMode = 0;
+                mMap.clear();
+                pinArray(buildings);
+                return true;
+            case R.id.canteens:
+                selectedMode = 1;
+                mMap.clear();
+                pinArray(canteens);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        setHasOptionsMenu(true);
         return inflater.inflate(R.layout.fragment_maps, container, false);
     }
 
@@ -153,27 +213,38 @@ public class MapsFragment extends Fragment implements SelectListener{
     }
 
     public void showRecyclerView(){
+        // Add linear layout for the search items
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adaptor = new MapSearchAdaptor(buildings, this);
-        mRecyclerView.setAdapter(adaptor);
+        if (selectedMode == 0){
+            adaptor.filterList(buildings);
+        }else if (selectedMode == 1){
+            adaptor.filterList(canteens);
+        }
     }
 
     public void clearRecyclerView(){
+        adaptor.filterList(new JSONArray());
+        // Remove layout for map navigation, enabling the dragging
         mRecyclerView.setLayoutManager(null);
-        mRecyclerView.setAdapter(null);
     }
 
     public void filter(String key){
-        JSONArray filteredBuilding = new JSONArray();
-        for (int i = 0; i < buildings.length(); i++){
+        JSONArray filteredArray = new JSONArray();
+        JSONArray target = new JSONArray();
+        if (selectedMode == 0){
+            target = buildings;
+        }else if (selectedMode == 1){
+            target = canteens;
+        }
+        for (int i = 0; i < target.length(); i++){
             try{
-                JSONObject currBuilding = buildings.getJSONObject(i);
+                JSONObject curr = target.getJSONObject(i);
                 String lowerKey = key.toLowerCase();
-                if (currBuilding.getString("abbrev").toLowerCase().contains(lowerKey) || currBuilding.getString("fullname").toLowerCase().contains(lowerKey)){
-                    filteredBuilding.put(currBuilding);
+                if (curr.getString("abbrev").toLowerCase().contains(lowerKey) || curr.getString("fullname").toLowerCase().contains(lowerKey)){
+                    filteredArray.put(curr);
                 }
-                if (filteredBuilding.length() > 0){
-                    adaptor.filterList(filteredBuilding);
+                if (filteredArray.length() > 0){
+                    adaptor.filterList(filteredArray);
                 }else{
                     adaptor.filterList(new JSONArray());
                 }
@@ -186,7 +257,7 @@ public class MapsFragment extends Fragment implements SelectListener{
     @Override
     public void onSearchItemClick(JSONObject clickedObject) {
         try{
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(clickedObject.getDouble("Lat"), clickedObject.getDouble("Lng")), 18));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(clickedObject.getDouble( "Lat"), clickedObject.getDouble("Lng")), 18));
             mSearchView.setQuery("",false);
             mSearchView.setIconified(true);
             clearRecyclerView();

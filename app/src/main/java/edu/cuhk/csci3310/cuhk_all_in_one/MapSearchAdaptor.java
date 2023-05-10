@@ -59,7 +59,7 @@ public class MapSearchAdaptor extends RecyclerView.Adapter<MapSearchAdaptor.View
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         try{
-            holder.getTextView().setText(localDataSet.getJSONObject(position).getString("fullname"));
+            holder.getTextView().setText(localDataSet.getJSONObject(position).getString("fullname") + " (" + localDataSet.getJSONObject(position).getString("abbrev") + ')');
             holder.getCardView().setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
