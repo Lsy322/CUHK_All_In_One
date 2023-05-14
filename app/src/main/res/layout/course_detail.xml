@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <TextView
+        android:layout_marginTop="10dp"
+        android:id="@+id/courseDetailAbbrev"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Course Abrrev"
+        android:textSize="20dp"
+        android:textAlignment="center"/>
+    <TextView
+        android:id="@+id/courseDetailTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Course Title"
+        android:textSize="20dp"
+        android:textAlignment="center"/>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RatingBar
+            android:id="@+id/courseDetailRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:numStars="5"
+            android:textAlignment="center"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:progressTint="#FFFF00"
+            android:secondaryProgressTint="#FFFF00"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView
+            android:id="@+id/commentSectionTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="5dp"
+            android:text="Comments:"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/courseCommentList"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toBottomOf="@id/commentSectionTitle"
+            app:layout_constraintBottom_toTopOf="@id/courseAddNewCommentButton"/>
+        <TextView
+            android:id="@+id/empty_course_comment_view"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:text="There are no comments for this course!"
+            android:gravity="center"
+            android:textSize="20dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/commentSectionTitle"
+            app:layout_constraintBottom_toTopOf="@id/courseAddNewCommentButton"/>
+        <Button
+            android:id="@+id/courseAddNewCommentButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_margin="10dp"
+            android:text="Add new comment"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</LinearLayout>
